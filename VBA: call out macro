@@ -1,0 +1,52 @@
+Private Sub CancelBtn_Click()
+    Callout.Hide
+    Callout.TimeBox = ""
+    Callout.NotesBox = ""
+    Callout.SupervisorInitials = ""
+End Sub
+
+Private Sub RecordBtn_Click()
+    Dim rowCounter As Integer
+    Dim lateSheet As Worksheet
+    Dim message As String
+    
+    If Me.SupervisorInitials = "" Then
+        MsgBox "Please enter your initials", vbOKOnly + vbCritical
+        Exit Sub
+    End If
+    
+    Set lateSheet = ActiveWorkbook.Sheets("Staff Event Log")
+    
+    rowCounter = lateSheet.Range("F1").Value + 3
+    lateSheet.Range("A" & rowCounter).Value = ActiveSheet.Range("B1").Value
+    lateSheet.Range("B" & rowCounter).Value = ActiveSheet.Range("B2").Value
+    lateSheet.Range("C" & rowCounter).Value = ActiveCell.Value
+    If Callout.lateBox Then lateSheet.Range("D" & rowCounter).Value = "Late Call Out"
+    If Not Callout.lateBox Then lateSheet.Range("D" & rowCounter).Value = "Call Out"
+    If Callout.CheckBox1 Then lateSheet.Range("F" & rowCounter).Value = "COVID-Related"
+    If Callout.CheckBox2 Then lateSheet.Range("F" & rowCounter).Value = "Non-COVID-Related"
+    If Callout.CheckBox3 Then lateSheet.Range("F" & rowCounter).Value = "Child Care-Related"
+
+    lateSheet.Range("E" & rowCounter).Value = "Called out at: " & Callout.TimeBox & "Recorded By: " & Callout.SupervisorInitials & "; Notes: " & Callout.NotesBox
+             
+    Callout.Hide
+    
+    lateSheet.Range("F1").Value = rowCounter - 2
+
+    If Not ActiveCell.Comment Is Nothing Then
+        holdString = ActiveCell.Comment.Text
+        ActiveCell.Comment.Delete
+        ActiveCell.AddComment holdString & vbCrLf & ActiveCell.Value & " called out @ " & Callout.TimeBox & "(" & Callout.SupervisorInitials & ")"
+    Else
+        ActiveCell.AddComment ActiveCell.Value & " called out @ " & Callout.TimeBox & "(" & Callout.SupervisorInitials & ")"
+    End If
+
+    ActiveCell.Value = ""
+    Callout.TimeBox = ""
+    Callout.NotesBox = ""
+    Callout.SupervisorInitials = ""
+End Sub
+
+Private Sub UserForm_Click()
+
+End Sub
