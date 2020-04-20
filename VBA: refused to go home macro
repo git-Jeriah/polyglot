@@ -1,0 +1,33 @@
+Option Explicit
+
+Private Sub Cancel_Click()
+
+RefusedtoGoHome.Hide
+
+End Sub
+
+Private Sub Record_Click()
+
+    Dim rowCounter As Integer
+    Dim lateSheet As Worksheet
+    Dim message As String
+    
+        
+    Set lateSheet = ActiveWorkbook.Sheets("Staff Event Log")
+    
+    rowCounter = lateSheet.Range("F1").Value + 3
+    lateSheet.Range("A" & rowCounter).Value = ActiveSheet.Range("B1").Value
+    lateSheet.Range("B" & rowCounter).Value = ActiveSheet.Range("B2").Value
+    lateSheet.Range("C" & rowCounter).Value = Me.StaffName
+    lateSheet.Range("D" & rowCounter).Value = "Refused to go home"
+    lateSheet.Range("E" & rowCounter).Value = Me.SupervisorsInitials
+        
+    RefusedtoGoHome.Hide
+    
+    lateSheet.Range("F1").Value = rowCounter - 2
+    
+End Sub
+
+Private Sub UserForm_Click()
+
+End Sub
