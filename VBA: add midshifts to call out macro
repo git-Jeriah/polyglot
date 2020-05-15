@@ -1,0 +1,3 @@
+If Callout.CheckBox4 Then lateSheet.Range("D" & rowCounter).Value = "Midshift Call Out"
+If Callout.CheckBox4 And Callout.lateBox Then lateSheet.Range("D" & rowCounter).Value = "Midshift Late Call Out"
+If Not Callout.CheckBox4 Then lateSheet.Range("D" & rowCounter).Value = "Call Out"
