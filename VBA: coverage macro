@@ -1,0 +1,38 @@
+Option Explicit
+
+Private Sub Cancel_Click()
+
+Coverage.Hide
+
+End Sub
+
+Private Sub DateControl_Click()
+
+End Sub
+
+Private Sub Record_Click()
+
+    Dim rowCounter As Integer
+    Dim lateSheet As Worksheet
+    Dim message As String
+    
+        
+    Set lateSheet = ActiveWorkbook.Sheets("Staff Event Log")
+    
+    rowCounter = lateSheet.Range("F1").Value + 3
+    lateSheet.Range("A" & rowCounter).Value = DateBox.Value
+    If Coverage.Day Then lateSheet.Range("B" & rowCounter).Value = "Day"
+    If Coverage.Evening Then lateSheet.Range("B" & rowCounter).Value = "Evening"
+    If Coverage.Night Then lateSheet.Range("B" & rowCounter).Value = "Night"
+    If Coverage.Midshift Then lateSheet.Range("B" & rowCounter).Value = "Midshift"
+    If Coverage.Midshift And Coverage.Evening Then lateSheet.Range("B" & rowCounter).Value = "Evening Mid"
+    If Coverage.Midshift And Coverage.Day Then lateSheet.Range("B" & rowCounter).Value = "Day Mid"
+    lateSheet.Range("C" & rowCounter).Value = Me.StaffName
+    lateSheet.Range("D" & rowCounter).Value = "Coverage"
+    lateSheet.Range("E" & rowCounter).Value = "Supervisors initials:" & Me.SupervisorsInitials & " ; Notes:" & Coverage.Notes
+        
+    Coverage.Hide
+    
+    lateSheet.Range("F1").Value = rowCounter - 2
+    
+End Sub
