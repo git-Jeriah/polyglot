@@ -1,0 +1,24 @@
+df = pd.read_csv('on calls and mandatory.csv')
+
+x1 = df['Date'].values
+y1 = df['Accepted On-Call'].values
+
+x2 = df['Date'].values
+y2 = df['Refused On-Call'].values
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+# Create two subplots sharing y axis
+fig, (ax1, ax2) = plt.subplots(2, sharey=True)
+ax1.plot(x1, y1, 'ko-', scalex = True, scaley = True)
+
+ax1.set(title='On-Calls', ylabel='Acceped On-Calls')
+ax1.legend('Accepted On-Call')
+
+ax2.plot(x2, y2, 'r.-', scalex = True, scaley = True)
+ax2.set(xlabel='Date', ylabel='Refused On-Calls')
+ax2.legend('Refused On-Call')
+
+plt.show()
