@@ -1,0 +1,157 @@
+Sub UpdateTrainedList()
+    Dim current As Workbook
+    Dim currSheet As Worksheet
+    Dim colorSheet As Worksheet
+    Dim trained As Workbook
+    Dim trainSheet As Worksheet
+    Dim filePath As String
+    Dim x As Integer
+    Dim y As Integer
+    Dim rng As Range
+    Dim tableName As String
+    
+    Application.EnableEvents = True
+    'filePath = "C:\Users\wakemanlj\Desktop\CA - Trained List.xlsm"
+    filePath = "\\hnas1-evs1\BehPsychNBU$\Shared\Research\Bowman\OBM Projects\Active Projects\color groups\Copy copy copy of CA Training Log.xlsm"
+    Set current = ActiveWorkbook
+    Set currSheet = current.Sheets("Sheet1")
+    Set trained = Application.Workbooks.Open(filePath)
+    Set trainSheet = trained.Sheets("Trained Staff")
+    If trainSheet.FilterMode Then trainSheet.ShowAllData
+    For x = 3 To currSheet.Range("I1") + 2
+        If currSheet.Range("G" & x) <> "School" And currSheet.Range("G" & x) <> "Float" And currSheet.Range("G" & x) <> "CAIII" And currSheet.Range("G" & x) <> "BDS" And currSheet.Range("G" & x) <> "Other" Then
+            Set rng = trainSheet.Range("A:A").Find(currSheet.Range("A" & x), , xlValues, xlWhole)
+            If rng Is Nothing Then
+                'Add row
+                trainSheet.ListObjects("TrainedTable").ListRows.Add
+                trainSheet.Cells(trainSheet.ListObjects("TrainedTable").ListRows.Count + 2, 1) = currSheet.Range("A" & x)
+                trainSheet.Cells(trainSheet.ListObjects("TrainedTable").ListRows.Count + 2, 2) = currSheet.Range("B" & x)
+                trainSheet.Cells(trainSheet.ListObjects("TrainedTable").ListRows.Count + 2, 3) = currSheet.Range("G" & x)
+                'Add to color tab
+                If currSheet.Range("B" & x) = "" Then
+                ElseIf currSheet.Range("B" & x) = "White" Then
+                    Set colorSheet = trained.Sheets("Red")
+                    tableName = "RedTable"
+                    colorSheet.ListObjects(tableName).ListRows.Add
+                    colorSheet.Cells(colorSheet.ListObjects(tableName).ListRows.Count + 2, 1) = currSheet.Range("A" & x)
+                    colorSheet.Cells(colorSheet.ListObjects(tableName).ListRows.Count + 2, 2) = currSheet.Range("G" & x)
+                    Set colorSheet = trained.Sheets("Blue")
+                    tableName = "BlueTable"
+                    colorSheet.ListObjects(tableName).ListRows.Add
+                    colorSheet.Cells(colorSheet.ListObjects(tableName).ListRows.Count + 2, 1) = currSheet.Range("A" & x)
+                    colorSheet.Cells(colorSheet.ListObjects(tableName).ListRows.Count + 2, 2) = currSheet.Range("G" & x)
+                    Set colorSheet = trained.Sheets("Yellow")
+                    tableName = "YellowTable"
+                    colorSheet.ListObjects(tableName).ListRows.Add
+                    colorSheet.Cells(colorSheet.ListObjects(tableName).ListRows.Count + 2, 1) = currSheet.Range("A" & x)
+                    colorSheet.Cells(colorSheet.ListObjects(tableName).ListRows.Count + 2, 2) = currSheet.Range("G" & x)
+                Else
+                    Set colorSheet = trained.Sheets(CStr(currSheet.Range("B" & x)))
+                    tableName = currSheet.Range("B" & x).Value & "Table"
+                    colorSheet.ListObjects(tableName).ListRows.Add
+                    colorSheet.Cells(colorSheet.ListObjects(tableName).ListRows.Count + 2, 1) = currSheet.Range("A" & x)
+                    colorSheet.Cells(colorSheet.ListObjects(tableName).ListRows.Count + 2, 2) = currSheet.Range("G" & x)
+                End If
+            Else
+                'Make sure type is up to date
+                rng.Offset(0, 2) = currSheet.Range("G" & x)
+            End If
+        End If
+        Set rng = Nothing
+    Next
+    y = trainSheet.ListObjects("TrainedTable").ListRows.Count + 2
+    For x = 4 To y
+        'Remove staff that no longer are with the NBU
+        Set rng = currSheet.Range("A:A").Find(trainSheet.Range("A" & x), , xlValues, xlWhole)
+        If rng Is Nothing Then
+On Error Resume Next
+            If trainSheet.Range("B" & x) = "White" Then
+                Set colorSheet = trained.Sheets("Red")
+                colorSheet.Range("A:A").Find(trainSheet.Range("A" & x)).EntireRow.Delete
+                Set colorSheet = trained.Sheets("Blue")
+                colorSheet.Range("A:A").Find(trainSheet.Range("A" & x)).EntireRow.Delete
+                Set colorSheet = trained.Sheets("Yellow")
+                colorSheet.Range("A:A").Find(trainSheet.Range("A" & x)).EntireRow.Delete
+            Else
+                Set colorSheet = trained.Sheets(CStr(trainSheet.Range("B" & x)))
+                colorSheet.Range("A:A").Find(trainSheet.Range("A" & x)).EntireRow.Delete
+            End If
+On Error GoTo 0
+            trainSheet.Range("A" & x).EntireRow.Delete
+            y = y - 1
+            x = x - 1
+        ElseIf currSheet.Range("G" & rng.Row) = "School" Or currSheet.Range("G" & rng.Row) = "Float" Or currSheet.Range("G" & rng.Row) = "CAIII" Or currSheet.Range("G" & rng.Row) = "BDS" Or currSheet.Range("G" & rng.Row) = "Other" Then
+            If trainSheet.Range("B" & x) = "White" Then
+            On Error Resume Next
+                Set colorSheet = trained.Sheets("Red")
+                colorSheet.Range("A:A").Find(trainSheet.Range("A" & x)).EntireRow.Delete
+                Set colorSheet = trained.Sheets("Blue")
+                colorSheet.Range("A:A").Find(trainSheet.Range("A" & x)).EntireRow.Delete
+                Set colorSheet = trained.Sheets("Yellow")
+                colorSheet.Range("A:A").Find(trainSheet.Range("A" & x)).EntireRow.Delete
+            On Error GoTo 0
+            Else
+                Set colorSheet = trained.Sheets(CStr(trainSheet.Range("B" & x)))
+                colorSheet.Range("A:A").Find(trainSheet.Range("A" & x)).EntireRow.Delete
+            End If
+            trainSheet.Range("A" & x).EntireRow.Delete
+            y = y - 1
+            x = x - 1
+        ElseIf currSheet.Range("B" & rng.Row) <> trainSheet.Range("B" & x) Then
+            'Deal with color group change
+            If currSheet.Range("B" & rng.Row) = "White" Then
+                If trainSheet.Range("B" & x) <> "Red" Then
+                    Set colorSheet = trained.Sheets("Red")
+                    tableName = "RedTable"
+                    colorSheet.ListObjects(tableName).ListRows.Add
+                    colorSheet.Cells(colorSheet.ListObjects(tableName).ListRows.Count + 2, 1) = currSheet.Range("A" & rng.Row)
+                    colorSheet.Cells(colorSheet.ListObjects(tableName).ListRows.Count + 2, 2) = currSheet.Range("G" & rng.Row)
+                End If
+                If trainSheet.Range("B" & x) <> "Blue" Then
+                    Set colorSheet = trained.Sheets("Blue")
+                    tableName = "BlueTable"
+                    colorSheet.ListObjects(tableName).ListRows.Add
+                    colorSheet.Cells(colorSheet.ListObjects(tableName).ListRows.Count + 2, 1) = currSheet.Range("A" & rng.Row)
+                    colorSheet.Cells(colorSheet.ListObjects(tableName).ListRows.Count + 2, 2) = currSheet.Range("G" & rng.Row)
+                End If
+                If trainSheet.Range("B" & x) <> "Yellow" Then
+                    Set colorSheet = trained.Sheets("Yellow")
+                    tableName = "YellowTable"
+                    colorSheet.ListObjects(tableName).ListRows.Add
+                    colorSheet.Cells(colorSheet.ListObjects(tableName).ListRows.Count + 2, 1) = currSheet.Range("A" & rng.Row)
+                    colorSheet.Cells(colorSheet.ListObjects(tableName).ListRows.Count + 2, 2) = currSheet.Range("G" & rng.Row)
+                End If
+            Else
+                Set colorSheet = trained.Sheets(CStr(currSheet.Range("B" & rng.Row)))
+                tableName = currSheet.Range("B" & rng.Row).Value & "Table"
+                If trainSheet.Range("B" & x) <> "White" Then
+                    colorSheet.ListObjects(tableName).ListRows.Add
+                    colorSheet.Cells(colorSheet.ListObjects(tableName).ListRows.Count + 2, 1) = currSheet.Range("A" & rng.Row)
+                    colorSheet.Cells(colorSheet.ListObjects(tableName).ListRows.Count + 2, 2) = currSheet.Range("G" & rng.Row)
+                End If
+                If trainSheet.Range("B" & x) = "" Then
+                ElseIf trainSheet.Range("B" & x) = "White" Then
+                    If currSheet.Range("B" & rng.Row) <> "Red" Then
+                        Set colorSheet = trained.Sheets("Red")
+                        If Not colorSheet.Range("A:A").Find(trainSheet.Range("A" & x)) Is Nothing Then colorSheet.Range("A:A").Find(trainSheet.Range("A" & x)).EntireRow.Delete
+                    End If
+                    If currSheet.Range("B" & rng.Row) <> "Blue" Then
+                        Set colorSheet = trained.Sheets("Blue")
+                        If Not colorSheet.Range("A:A").Find(trainSheet.Range("A" & x)) Is Nothing Then colorSheet.Range("A:A").Find(trainSheet.Range("A" & x)).EntireRow.Delete
+                    End If
+                    If currSheet.Range("B" & rng.Row) <> "Yellow" Then
+                        Set colorSheet = trained.Sheets("Yellow")
+                        If Not colorSheet.Range("A:A").Find(trainSheet.Range("A" & x)) Is Nothing Then colorSheet.Range("A:A").Find(trainSheet.Range("A" & x)).EntireRow.Delete
+                    End If
+                Else
+                    Set colorSheet = trained.Sheets(CStr(trainSheet.Range("B" & x)))
+                    If Not colorSheet.Range("A:A").Find(trainSheet.Range("A" & x)) Is Nothing Then colorSheet.Range("A:A").Find(trainSheet.Range("A" & x)).EntireRow.Delete
+                End If
+            End If
+            trainSheet.Range("B" & x) = currSheet.Range("B" & rng.Row)
+        End If
+    Next
+    trained.Sheets("Information").Range("B2") = trainSheet.ListObjects("TrainedTable").ListRows.Count
+    trained.Close True
+    Application.EnableEvents = True
+End Sub
