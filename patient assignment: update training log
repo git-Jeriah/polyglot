@@ -1,0 +1,109 @@
+Sub UpdateTrainingList()
+    Dim testBook As Workbook
+    Dim currSheet As Worksheet
+    Dim patientAssign As Workbook
+    Dim trainSheet As Worksheet
+    Dim colorSheet As Worksheet
+    Dim trained As Workbook
+    Dim filePath As String
+    Dim x As Integer
+    Dim y As Integer
+    Dim z As Integer
+    Dim rng As Range
+    Dim rng2 As Range
+    Dim rng3 As Range
+    Dim tableName As String
+    Dim oldColor As String
+    Dim newColor As String
+    
+    
+    
+    Set patientAssign = ActiveWorkbook
+    Set currSheet = patientAssign.Sheets("Current Patient Information")
+    
+    If currSheet.Range("AC20") <> "Published" Then Exit Sub
+    filePath = "\\hnas1-evs1\BehPsychNBU$\Shared\Research\Bowman\OBM Projects\Active Projects\color groups\Copy copy copy of CA Training Log.xlsm"
+    'filePath = "C:\Users\workman\Desktop\CA - Trained List.xlsm"
+    On Error Resume Next
+        Set testBook = Workbooks("Copy copy copy of CA Training Log.xlsm")
+        If Not testBook Is Nothing Then Exit Sub
+    On Error GoTo 0
+    Set trained = Application.Workbooks.Open(filePath)
+    If trained.ReadOnly Then
+        trained.Close False
+        Exit Sub
+    End If
+    Application.EnableEvents = False
+    Set trainSheet = trained.Sheets("Trained Staff")
+    If trainSheet.FilterMode Then trainSheet.ShowAllData
+    y = Application.WorksheetFunction.CountA(currSheet.Range("B4:B23"))
+    For x = 4 To y + 3
+        If currSheet.Range("B" & x) = "" Or currSheet.Range("B" & x) = "RRRR" Or currSheet.Range("B" & x) = "BBBB" Or currSheet.Range("B" & x) = "YYYY" Then
+        Else
+            Set rng = trainSheet.Range("C3").EntireRow.Find(currSheet.Range("B" & x), , xlValues, xlWhole)
+            If rng Is Nothing Then
+                'Add Patient
+                trainSheet.ListObjects("TrainedTable").ListColumns.Add
+                trainSheet.Cells(3, trainSheet.ListObjects("TrainedTable").ListColumns.Count) = currSheet.Range("B" & x)
+                trainSheet.Cells(2, trainSheet.ListObjects("TrainedTable").ListColumns.Count) = currSheet.Range("P" & x)
+                trainSheet.Cells(1, trainSheet.ListObjects("TrainedTable").ListColumns.Count) = "=COUNTIF(TrainedTable[" & currSheet.Range("B" & x) & "], " & Chr$(34) & "=X" & Chr$(34) & ")"
+                'Add to color group tab
+                Set colorSheet = trained.Sheets(CStr(currSheet.Range("P" & x)))
+                tableName = currSheet.Range("P" & x) & "Table"
+                colorSheet.ListObjects(tableName).ListColumns.Add
+                colorSheet.Cells(3, colorSheet.ListObjects(tableName).ListColumns.Count) = currSheet.Range("B" & x)
+                colorSheet.Cells(2, colorSheet.ListObjects(tableName).ListColumns.Count) = "=COUNTIF(" & tableName & "[" & currSheet.Range("B" & x) & "], " & Chr$(34) & "=X" & Chr$(34) & ")"
+            ElseIf rng.Offset(-1, 0) <> currSheet.Range("P" & x) Then
+                'Change in color group
+                newColor = currSheet.Range("P" & x)
+                oldColor = rng.Offset(-1, 0)
+                'Add to new color group
+                Set colorSheet = trained.Sheets(newColor)
+                tableName = newColor & "Table"
+                colorSheet.ListObjects(tableName).ListColumns.Add
+                colorSheet.Cells(3, colorSheet.ListObjects(tableName).ListColumns.Count) = currSheet.Range("B" & x)
+                colorSheet.Cells(2, colorSheet.ListObjects(tableName).ListColumns.Count) = "=COUNTIF(" & tableName & "[" & currSheet.Range("B" & x) & "], " & Chr$(34) & "=X" & Chr$(34) & ")"
+                'Check for staff overlap to move data
+                z = 4
+                Do While trained.Sheets(oldColor).Range("A" & z) <> ""
+                    Set rng2 = colorSheet.Range("A3").EntireColumn.Find(trained.Sheets(oldColor).Range("A" & z).Value, , xlValues, xlWhole)
+                    If Not rng2 Is Nothing Then
+                        Set rng3 = trained.Sheets(oldColor).Range("A3").EntireRow.Find(currSheet.Range("B" & x).Value, , xlValues, xlWhole)
+                        rng2.Offset(0, colorSheet.ListObjects(tableName).ListColumns.Count - 1) = trained.Sheets(oldColor).Range("A" & z).Offset(0, rng3.Column - 1)
+                    End If
+                    Set rng2 = Nothing
+                    z = z + 1
+                Loop
+                'Remove from old
+                Set colorSheet = trained.Sheets(oldColor)
+                colorSheet.Range("A3").EntireRow.Find(rng.Value, , xlValues, xlWhole).EntireColumn.Delete
+                'Record change on master tab
+                rng.Offset(-1, 0) = currSheet.Range("P" & x)
+            End If
+        End If
+        Set rng = Nothing
+    Next
+    y = trainSheet.ListObjects("TrainedTable").ListColumns.Count
+    For x = 4 To y
+        Set rng = currSheet.Range("B4:B23").Find(trainSheet.Cells(3, x), , xlValues, xlWhole)
+        If rng Is Nothing Then
+            'Remove patients who are no longer with us
+            If trainSheet.Cells(3, x) = "Red" Then
+                Set colorSheet = trained.Sheets("Red")
+                colorSheet.Range("A3").EntireRow.Find(trainSheet.Cells(3, x), , xlValues, xlWhole).EntireColumn.Delete
+            ElseIf trainSheet.Cells(3, x) = "Blue" Then
+                Set colorSheet = trained.Sheets("Blue")
+                colorSheet.Range("A3").EntireRow.Find(trainSheet.Cells(3, x), , xlValues, xlWhole).EntireColumn.Delete
+            ElseIf trainSheet.Cells(3, x) = "Yellow" Then
+                Set colorSheet = trained.Sheets("Yellow")
+                colorSheet.Range("A3").EntireRow.Find(trainSheet.Cells(3, x), , xlValues, xlWhole).EntireColumn.Delete
+            End If
+            trainSheet.Range(trainSheet.Cells(3, x).Address).EntireColumn.Delete
+            x = x - 1
+            y = y - 1
+        End If
+        Set rng = Nothing
+    Next
+    trained.Close True
+    Application.EnableEvents = True
+End Sub
